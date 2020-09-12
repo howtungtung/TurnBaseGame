@@ -10,6 +10,13 @@ public class CharacterController : MonoBehaviour
         private set;
         get;
     }
+    public bool IsIdle
+    {
+        get
+        {
+            return animator.GetCurrentAnimatorStateInfo(0).IsTag("Idle");
+        }
+    }
     public CharacterData characterData;
     public Transform frontPos;
     public Animator animator;
