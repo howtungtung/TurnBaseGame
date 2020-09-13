@@ -22,7 +22,7 @@ public class TransitionController : MonoBehaviour
     {
         animator.SetTrigger("Show");
         yield return new WaitForSeconds(1f);
-        SceneManager.LoadScene(nextScene);
+        yield return SceneManager.LoadSceneAsync(nextScene);
         animator.SetTrigger("Hide");
     }
 }

@@ -279,13 +279,13 @@ ModelImporter:
       curves: []
       events:
       - time: 0.4774775
-        functionName: NewEvent
+        functionName: OnAttackFramed
         data: 
         objectReferenceParameter: {instanceID: 0}
         floatParameter: 0
         intParameter: 0
         messageOptions: 0
-      - time: 0.996997
+      - time: 0.9929566
         functionName: OnAttackComplete
         data: 
         objectReferenceParameter: {instanceID: 0}

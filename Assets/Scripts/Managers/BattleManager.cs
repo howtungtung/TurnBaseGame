@@ -8,57 +8,31 @@ using System;
 
 public class BattleManager : MonoBehaviour
 {
+    public int quizLevel = 0;
+    public int maxTurnNumber = 5;
     public PlayableDirector startingTimeline;
-    public PlayableDirector gamingTimeline;
     public HealthIndicator playerHealthIndicator;
     public HealthIndicator enemyHealthIndicator;
     public CharacterController enemy;
     public CharacterController player;
-    public CharacterController[] enemys;
+    public Text enemyNameLabel;
+    public EnemyInfo[] enemies;
     public Transform spawnPos;
-    public TextAsset quizFile;
-    public TextAsset enemyFile;
-    public Quiz[] quizzes;
-    public EnemyData[] enemiesData;
-    public EnemyData enemyData;
-    public int turnNumber;
+    private int turnNumber;
     public ActionTimer actionTimer;
     public TurnUI turnUI;
     public CameraShake cameraShake;
-    private int playerAnswer = -1;
-    public GameObject victoryUI;
     public GameObject gameOverUI;
-
-    private void Awake()
-    {
-        enemy = Instantiate(enemys[0], spawnPos.position, spawnPos.rotation);
-        quizzes = JsonConvert.DeserializeObject<Quiz[]>(quizFile.text);
-        enemiesData = JsonConvert.DeserializeObject<EnemyData[]>(enemyFile.text);
-        enemyData = enemiesData[0];
-        enemy.Setup(new CharacterData()
-        {
-            atk = enemyData.atk,
-            maxHP = enemyData.hp,
-            hp = enemyData.hp,
-        });
-        player.Setup(new CharacterData()
-        {
-            atk = 1,
-            maxHP = 5,
-            hp = 5,
-        });
-    }
-
-    private void OnEnable()
-    {
-        player.onHurt += OnPlayerHurt;
-        enemy.onHurt += OnEnemyHurt;
-    }
-
+    public Animator turnStartHintUI;
+    public string backLevelScene = "Level1";
+    private Quiz[] quizzes;
+    public QuizUI quizUI;
+    private bool waitPlayerAnswer;
+    private bool isAnswerRight;
     private void OnDisable()
     {
-        player.onHurt -= OnPlayerHurt;
-        enemy.onHurt -= OnEnemyHurt;
+        player.characterData.onHPChanged -= OnPlayerHurt;
+        enemy.characterData.onHPChanged -= OnEnemyHurt;
     }
 
     private IEnumerator Start()
@@ -70,10 +44,18 @@ public class BattleManager : MonoBehaviour
 
     private IEnumerator Starting()
     {
-        playerHealthIndicator.gameObject.SetActive(false);
-        enemyHealthIndicator.gameObject.SetActive(false);
-        turnUI.gameObject.SetActive(false);
-        actionTimer.gameObject.SetActive(false);
+        quizzes = DataManager.Instance.levelQuizzesData[quizLevel];
+        Shuffle(quizzes);
+        //setup enemy
+        EnemyInfo battleEnemy = Array.Find(enemies, data => data.id == DataManager.Instance.battleEnemyData.id);
+        enemy = Instantiate(battleEnemy, spawnPos.position, spawnPos.rotation).CharacterController;
+        Destroy(enemy.GetComponent<LevelEnemyBehavior>());
+        enemy.characterData = DataManager.Instance.battleEnemyData;
+        enemy.characterData.onHPChanged += OnEnemyHurt;
+        enemyNameLabel.text = enemy.characterData.name;
+        //setup player
+        player.characterData = DataManager.Instance.playerData;
+        player.characterData.onHPChanged += OnPlayerHurt;
         startingTimeline.Play();
         yield return new WaitUntil(() => startingTimeline.state == PlayState.Paused);
     }
@@ -81,25 +63,33 @@ public class BattleManager : MonoBehaviour
     private IEnumerator GameLoop()
     {
         turnNumber = 1;
-        turnUI.Setup(quizzes.Length);
-        turnUI.UpdateTurn(turnNumber);
-        actionTimer.Setup(enemyData.actionTime);
-        actionTimer.UpdateTimer(enemyData.actionTime);
+        turnUI.Setup(maxTurnNumber);
+        actionTimer.Setup(enemy.characterData.actionTime);
         playerHealthIndicator.SetHP(player.characterData.hp);
         enemyHealthIndicator.SetHP(enemy.characterData.hp);
-        while (turnNumber <= quizzes.Length && player.IsDead == false && enemy.IsDead == false)
+        playerHealthIndicator.gameObject.SetActive(true);
+        enemyHealthIndicator.gameObject.SetActive(true);
+        actionTimer.gameObject.SetActive(true);
+        turnUI.gameObject.SetActive(true);
+        do
         {
+            turnStartHintUI.SetTrigger("Play");
             turnUI.UpdateTurn(turnNumber);
-            gamingTimeline.Play();
-            yield return new WaitUntil(() => gamingTimeline.state == PlayState.Paused);
-            float timer = enemyData.actionTime;
-            while (timer > 0 && playerAnswer == -1)
+            yield return new WaitForSeconds(1f);
+            isAnswerRight = false;
+            waitPlayerAnswer = true;
+            int quizIndex = (int)Mathf.Repeat(turnNumber - 1, quizzes.Length);
+            quizUI.Show(quizzes[quizIndex]);
+            float timer = enemy.characterData.actionTime;
+            while (timer > 0 && waitPlayerAnswer)
             {
                 yield return null;
                 timer -= Time.deltaTime;
                 actionTimer.UpdateTimer(timer);
             }
-            if (quizzes[turnNumber - 1].answer == playerAnswer)
+            yield return new WaitForSeconds(1f);
+            quizUI.gameObject.SetActive(false);
+            if (isAnswerRight)
             {
                 player.Attack(enemy);
             }
@@ -107,23 +97,21 @@ public class BattleManager : MonoBehaviour
             {
                 enemy.Attack(player);
             }
-            yield return new WaitForSeconds(1f);
-            yield return new WaitUntil(() => player.IsIdle && enemy.IsIdle);
+            yield return new WaitForSeconds(2f);
             turnNumber++;
-        }
+        } while (turnNumber <= maxTurnNumber && player.characterData.hp > 0 && enemy.characterData.hp > 0);
     }
 
     private IEnumerator Ending()
     {
-        if (player.IsDead)
+        string nextScene = backLevelScene;
+        if (player.characterData.hp <= 0)
         {
             gameOverUI.SetActive(true);
+            nextScene = "LevelSelectScene";
         }
-        else if (enemy.IsDead)
-        {
-            victoryUI.SetActive(true);
-        }
-        yield return new WaitForSeconds(3f);
+        yield return new WaitForSeconds(2f);
+        TransitionController.Instance.DoTransition(nextScene);
     }
 
     private void OnEnemyHurt()
@@ -138,13 +126,23 @@ public class BattleManager : MonoBehaviour
         cameraShake.Shake();
     }
 
-    public void TriggerEnemy(string trigger)
+    public void OnPlayerAnswer(bool isRight)
     {
-        enemy.SetTrigger(trigger);
+        waitPlayerAnswer = false;
+        isAnswerRight = isRight;
     }
 
-    public void OnPlayerSelect(int index)
+    private void Shuffle<T>(T[] array)
     {
-        playerAnswer = index;
+        var rng = new System.Random();
+        int n = array.Length;
+        while (n > 1)
+        {
+            int k = rng.Next(n);
+            n--;
+            T temp = array[n];
+            array[n] = array[k];
+            array[k] = temp;
+        }
     }
 }

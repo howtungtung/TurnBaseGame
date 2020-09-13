@@ -15,6 +15,7 @@ public class ActionTimer : MonoBehaviour
     {
         maxTime = timer;
         colorChangeTime = maxTime * colorChangeThreshold;
+        UpdateTimer(timer);
     }
 
     public void UpdateTimer(float time)

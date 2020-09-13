@@ -2,9 +2,15 @@
   {
     "id": 1,
     "name": "Orc",
-    "rank": 1,
     "hp": 3,
     "atk": 1,
     "actionTime": 10
+  },
+  {
+    "id": 2,
+    "name": "Dragon",
+    "hp": 10,
+    "atk": 5,
+    "actionTime": 5
   }
 ]
