@@ -26,7 +26,7 @@ public class Bullet : MonoBehaviour
     {
         if (other.CompareTag("Player"))
         {
-            other.GetComponent<CharacterController>().DoDamage(attack);
+            other.GetComponent<CharacterControl>().DoDamage(attack);
             explosionEffect.transform.position = other.transform.position;
             explosionEffect.Play();
             gameObject.SetActive(false);

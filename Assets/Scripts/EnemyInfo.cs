@@ -7,10 +7,10 @@ public class EnemyInfo : MonoBehaviour
 {
     public int id;
     public int serialID;
-    public CharacterController CharacterController { private set; get; }
+    public CharacterControl CharacterController { private set; get; }
 
     private void Awake()
     {
-        CharacterController = GetComponent<CharacterController>();
+        CharacterController = GetComponent<CharacterControl>();
     }
 }

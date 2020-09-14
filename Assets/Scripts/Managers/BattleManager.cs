@@ -13,8 +13,8 @@ public class BattleManager : MonoBehaviour
     public PlayableDirector startingTimeline;
     public HealthIndicator playerHealthIndicator;
     public HealthIndicator enemyHealthIndicator;
-    public CharacterController enemy;
-    public CharacterController player;
+    public CharacterControl enemy;
+    public CharacterControl player;
     public Text enemyNameLabel;
     public EnemyInfo[] enemies;
     public Transform spawnPos;
@@ -31,8 +31,8 @@ public class BattleManager : MonoBehaviour
     private bool isAnswerRight;
     private void OnDisable()
     {
-        player.characterData.onHPChanged -= OnPlayerHurt;
-        enemy.characterData.onHPChanged -= OnEnemyHurt;
+        player.characterData.onHPReduce -= OnPlayerHurt;
+        enemy.characterData.onHPReduce -= OnEnemyHurt;
     }
 
     private IEnumerator Start()
@@ -51,11 +51,11 @@ public class BattleManager : MonoBehaviour
         enemy = Instantiate(battleEnemy, spawnPos.position, spawnPos.rotation).CharacterController;
         Destroy(enemy.GetComponent<LevelEnemyBehavior>());
         enemy.characterData = DataManager.Instance.battleEnemyData;
-        enemy.characterData.onHPChanged += OnEnemyHurt;
+        enemy.characterData.onHPReduce += OnEnemyHurt;
         enemyNameLabel.text = enemy.characterData.name;
         //setup player
         player.characterData = DataManager.Instance.playerData;
-        player.characterData.onHPChanged += OnPlayerHurt;
+        player.characterData.onHPReduce += OnPlayerHurt;
         startingTimeline.Play();
         yield return new WaitUntil(() => startingTimeline.state == PlayState.Paused);
     }
@@ -114,13 +114,13 @@ public class BattleManager : MonoBehaviour
         TransitionController.Instance.DoTransition(nextScene);
     }
 
-    private void OnEnemyHurt()
+    private void OnEnemyHurt(int amount)
     {
         enemyHealthIndicator.SetHP(enemy.characterData.hp);
         cameraShake.Shake();
     }
 
-    private void OnPlayerHurt()
+    private void OnPlayerHurt(int amount)
     {
         playerHealthIndicator.SetHP(player.characterData.hp);
         cameraShake.Shake();

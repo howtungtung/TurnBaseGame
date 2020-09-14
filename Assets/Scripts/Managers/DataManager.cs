@@ -6,6 +6,7 @@ using System;
 public class DataManager : MonoBehaviour
 {
     public static DataManager Instance { private set; get; }
+
     public TextAsset enemiesSettingFile;
     public TextAsset[] quizzesSettingFile;
     public CharacterData[] enemiesData;
@@ -15,7 +16,7 @@ public class DataManager : MonoBehaviour
     public Dictionary<int, bool> levelItemsActive = new Dictionary<int, bool>();
     public CharacterData battleEnemyData;
     public Vector3 playerLevelPosition;
-
+    private CharacterData defaultPlayerData;
     private void Awake()
     {
         if (Instance)
@@ -29,6 +30,17 @@ public class DataManager : MonoBehaviour
         {
             levelQuizzesData[i] = JsonConvert.DeserializeObject<Quiz[]>(quizzesSettingFile[i].text);
         }
+        defaultPlayerData = playerData.Clone();
+        playerLevelPosition = Vector3.one;
+    }
+
+    public void ResetAllData()
+    {
+        playerData = defaultPlayerData.Clone();
+        levelEnemiesData.Clear();
+        levelItemsActive.Clear();
+        battleEnemyData = null;
+        playerLevelPosition = Vector3.one;
     }
 
     public void SetLevelItemStatus(int serialID, bool active)

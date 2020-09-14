@@ -10,7 +10,7 @@ public class Trap : MonoBehaviour
     {
         if (other.CompareTag("Player"))
         {
-            var characterController = other.GetComponent<CharacterController>();
+            var characterController = other.GetComponent<CharacterControl>();
             characterController.DoDamage(damage);
         }
     }

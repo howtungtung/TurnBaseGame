@@ -12,11 +12,19 @@ public class CharacterData
     public int atk;
     public int actionTime;
 
-    public event UnityAction onHPChanged;
-    public void SetHP(int hp)
+    public event UnityAction<int> onHPAdd;
+    public event UnityAction<int> onHPReduce;
+
+    public void AddHP(int amount)
     {
-        this.hp = hp;
-        onHPChanged?.Invoke();
+        hp += amount;
+        onHPAdd?.Invoke(amount);
+    }
+
+    public void ReduceHP(int amount)
+    {
+        hp -= amount;
+        onHPReduce?.Invoke(amount);
     }
 
     public CharacterData Clone()

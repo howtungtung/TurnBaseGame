@@ -23,9 +23,9 @@ public class Coin : MonoBehaviour
 
     void Pickup()
     {
-        Instantiate(pickupEffect, transform.position, transform.rotation);
+        Destroy(Instantiate(pickupEffect, transform.position, transform.rotation), 2f);
         int hp = DataManager.Instance.playerData.hp;
-        DataManager.Instance.playerData.SetHP(hp + amount);
+        DataManager.Instance.playerData.AddHP(amount);
         DataManager.Instance.SetLevelItemStatus(serialID, false);
         Destroy(gameObject);
     }

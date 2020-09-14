@@ -10,16 +10,18 @@ public class LevelManager : MonoBehaviour
     public GameObject victoryUI;
     private CharacterData playerData;
     public EnemyInfo[] allEnemies;
-    public CharacterController player;
+    public CharacterControl player;
+    public CameraShake cameraShake;
     private void Start()
     {
-        player = GameObject.FindGameObjectWithTag("Player").GetComponent<CharacterController>();
+        player = GameObject.FindGameObjectWithTag("Player").GetComponent<CharacterControl>();
         playerData = DataManager.Instance.playerData;
-        playerData.onHPChanged += OnPlayerHPChanged;
+        playerData.onHPAdd += OnPlayerHPAdd;
+        playerData.onHPReduce += OnPlayerHPReduce;
         player.characterData = playerData;
         playerHealthIndicator.SetHP(playerData.hp);
         allEnemies = FindObjectsOfType<EnemyInfo>();
-        for(int i = 0; i < allEnemies.Length; i++)
+        for (int i = 0; i < allEnemies.Length; i++)
         {
             CharacterData enemyData = DataManager.Instance.GetEnemyData(allEnemies[i].id, allEnemies[i].serialID);
             allEnemies[i].CharacterController.characterData = enemyData;
@@ -28,14 +30,15 @@ public class LevelManager : MonoBehaviour
                 allEnemies[i].gameObject.SetActive(false);
             }
         }
-        player.agent.Warp(DataManager.Instance.playerLevelPosition);
-       // player.transform.position =;
+        if (DataManager.Instance.playerLevelPosition != Vector3.one)
+            player.agent.Warp(DataManager.Instance.playerLevelPosition);
         CheckGameOver();
     }
 
     private void OnDisable()
     {
-        playerData.onHPChanged -= OnPlayerHPChanged;
+        playerData.onHPAdd -= OnPlayerHPAdd;
+        playerData.onHPReduce -= OnPlayerHPReduce;
     }
 
     public void ToggleTopView()
@@ -43,10 +46,16 @@ public class LevelManager : MonoBehaviour
         followPlayerCam.Priority = followPlayerCam.Priority == 11 ? 9 : 11;
     }
 
-    private void OnPlayerHPChanged()
+    private void OnPlayerHPAdd(int amount)
     {
         playerHealthIndicator.SetHP(playerData.hp);
-        if(playerData.hp <= 0)
+    }
+
+    private void OnPlayerHPReduce(int amount)
+    {
+        playerHealthIndicator.SetHP(playerData.hp);
+        cameraShake.Shake();
+        if (playerData.hp <= 0)
         {
             StartCoroutine(EndingLevel(gameOverUI));
         }
@@ -54,6 +63,7 @@ public class LevelManager : MonoBehaviour
 
     private IEnumerator EndingLevel(GameObject showUI)
     {
+        player.agent.isStopped = true;
         yield return new WaitForSeconds(1f);
         showUI.SetActive(true);
         yield return new WaitForSeconds(3f);
@@ -62,7 +72,7 @@ public class LevelManager : MonoBehaviour
 
     private void CheckGameOver()
     {
-        if(playerData.hp <= 0)
+        if (playerData.hp <= 0)
         {
             StartCoroutine(EndingLevel(gameOverUI));
             return;

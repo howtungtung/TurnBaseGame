@@ -5,11 +5,11 @@ using UnityEngine.AI;
 
 public class LevelEnemyBehavior : MonoBehaviour
 {
-    private CharacterController characterController;
+    private CharacterControl characterController;
 
     private void Awake()
     {
-        characterController = GetComponent<CharacterController>();
+        characterController = GetComponent<CharacterControl>();
     }
 
     public void OnMouseEnter()
